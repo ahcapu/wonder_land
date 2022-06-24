@@ -91,6 +91,33 @@ export class VisitorUtils {
     }
   };
 
+  static getDetail = async (phone: string) => {
+    try {
+      let guardians = await getRepository(Guardian).query(`SELECT id, phone_number FROM guardians WHERE phone_number = $1`, [phone]);
+      let kids = await getRepository(Kid).query('SELECT * FROM kids WHERE guardain_id = $1', [guardians[0].id]);
+      let visits = await getRepository(Visit).query('SELECT * FROM visits WHERE guardain_id = $1', [guardians[0].id]);
+      for (const guardian of guardians) {
+        let kids_array = [];
+        for (const kid of kids) {
+          if (guardian.id === kid.guardain_id) {
+            kids_array.push(kid);
+            let visits_array = [];
+            for (const visit of visits) {
+              if (kid.id === visit.kid_id) {
+                visits_array.push(visit);
+              }
+            }
+            kid.visits = visits_array;
+          }
+        }
+        guardian.kids = kids_array;
+      }
+      return guardians;
+    } catch (error) {
+      return error;
+    }
+  };
+
   static stationStatus = async (start?: string, end?: string) => {
     try {
       let visits = await getRepository(Visit).query(

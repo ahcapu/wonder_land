@@ -123,6 +123,19 @@ export class VisitorController {
     }
   };
 
+  static getDetail = async (req: Request, res: Response) => {
+    try {
+      const result = await VisitorUtils.getDetail(req.params.phone);
+      if (!result) {
+        return res.status(204).json({ status: 204, message: 'no record found' });
+      }
+      
+      return res.status(200).json({ status: 200, data: result });
+    } catch (error) {
+      return res.status(500).json({ error });
+    }
+  };
+
   static stationStatus = async (req: Request, res: Response) => {
     try {
       let start = req.body.start;
