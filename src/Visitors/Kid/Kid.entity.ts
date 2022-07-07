@@ -16,4 +16,7 @@ export class Kid extends BaseAuto {
 
   @Column({ nullable: true, type: "varchar" })
   gender: string;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  reg_on: Date;
 }

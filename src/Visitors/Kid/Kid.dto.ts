@@ -12,4 +12,7 @@ export class KidDto {
 
   @IsOptional()
   gender: string;
+
+  @IsOptional()
+  reg_on: Date;
 }

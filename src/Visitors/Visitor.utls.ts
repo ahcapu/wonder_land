@@ -63,10 +63,11 @@ export class VisitorUtils {
       k.name,
       to_char(k.date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
       k.gender,
-      to_char(g.created_at, 'YYYY-MM-DD') AS registered_on,
+      to_char(k.reg_on, 'YYYY-MM-DD') AS registered_on,
       u.station,
-      to_char(visits.last_visit, 'YYYY-MM-DD') AS last_visit,
-      visits.total_number_of_visits
+      to_char(visit.last_visit, 'YYYY-MM-DD') AS last_visit,
+      visit.total_number_of_visits,
+      uu.station AS last_visit_station
       FROM kids AS k
       JOIN
       guardians AS g
@@ -78,12 +79,20 @@ export class VisitorUtils {
       u.id = k.user
       JOIN
       (
-         SELECT kid_id, MAX(visit_date) AS last_visit, COUNT(kid_id) AS total_number_of_visits FROM visits
+         SELECT kid_id, MAX(visit_date) AS last_visit, COUNT(kid_id) AS total_number_of_visits, MAX(id) AS visit_id FROM visits
          GROUP BY
          kid_id
-         ) as visits
-          ON
-          visits.kid_id = k.id
+      ) AS visit
+        ON
+          visit.kid_id = k.id
+      JOIN
+        visits AS v
+      ON
+        v.id = visit.visit_id
+      JOIN
+        users AS uu
+      ON
+        uu.id = v.user
           ORDER BY registered_on DESC`);
       return kids;
     } catch (error) {
@@ -93,9 +102,18 @@ export class VisitorUtils {
 
   static getDetail = async (phone: string) => {
     try {
-      let guardians = await getRepository(Guardian).query(`SELECT id, phone_number FROM guardians WHERE phone_number = $1`, [phone]);
-      let kids = await getRepository(Kid).query('SELECT * FROM kids WHERE guardain_id = $1', [guardians[0].id]);
-      let visits = await getRepository(Visit).query('SELECT * FROM visits WHERE guardain_id = $1', [guardians[0].id]);
+      let guardians = await getRepository(Guardian).query(
+        `SELECT id, phone_number FROM guardians WHERE phone_number = $1`,
+        [phone]
+      );
+      let kids = await getRepository(Kid).query(
+        "SELECT * FROM kids WHERE guardain_id = $1",
+        [guardians[0].id]
+      );
+      let visits = await getRepository(Visit).query(
+        "SELECT v.*, u.station FROM visits AS v JOIN users AS u ON u.id = v.user WHERE v.guardain_id = $1",
+        [guardians[0].id]
+      );
       for (const guardian of guardians) {
         let kids_array = [];
         for (const kid of kids) {
@@ -120,7 +138,7 @@ export class VisitorUtils {
 
   static stationStatus = async (start?: string, end?: string) => {
     try {
-      let visits = await getRepository(Visit).query(
+      return await getRepository(Visit).query(
         `SELECT u.station, count(v.id) AS number_of_visits FROM visits AS v
         JOIN
         users AS u
@@ -131,22 +149,36 @@ export class VisitorUtils {
         u.station`,
         [start, end]
       );
+    } catch (error) {
+      return error;
+    }
+  };
 
-      let date_wise_and_station_wise = await getRepository(Visit).query(`
+  static dateWiseVisits = async (start?: string, end?: string, station?: string) => {
+    try {
+      return await getRepository(Visit).query(`
       SELECT
-      u.station, to_char(visit_date, 'YYYY-MM-DD') AS visit_date, COUNT(v.id) AS visits
+      COUNT(v.id) AS visits, to_char(visit_date, 'YYYY-MM-DD') AS visit_date
       FROM
       visits AS v
       JOIN
       users AS u
       ON
       u.id = v.user
+      WHERE to_char(visit_date, 'YYYY-MM-DD') BETWEEN $1 AND $2 AND u.station = $3
       GROUP BY
       to_char(visit_date, 'YYYY-MM-DD'),
       u.station
-      `);
+      `, [start, end, station]);
+      
+    } catch (error) {
+      return error;
+    }
+  };
 
-      let month_wise_and_station_wise = await getRepository(Visit).query(`
+  static monthWiseVisits = async (start?: string, end?: string, station?: string) => {
+    try {
+      return await getRepository(Visit).query(`
       SELECT
       u.station, to_char(visit_date, 'YYYY-MM') As visit_month, COUNT(v.id) AS visits
       FROM
@@ -155,15 +187,34 @@ export class VisitorUtils {
       users AS u
       ON
       u.id = v.user
+      WHERE to_char(visit_date, 'YYYY-MM') BETWEEN $1 AND $2 AND u.station = $3
       GROUP BY
       to_char(visit_date, 'YYYY-MM'),
       u.station
-      `);
-      return {
-        total_visits: visits,
-        daily_visits: date_wise_and_station_wise,
-        monthly_visits: month_wise_and_station_wise,
-      };
+      `, [start, end, station]);
+      
+    } catch (error) {
+      return error;
+    }
+  };
+
+  static yearWiseVisits = async (start?: string, end?: string, station?: string) => {
+    try {
+      return await getRepository(Visit).query(`
+      SELECT
+      u.station, to_char(visit_date, 'YYYY') As visit_year, COUNT(v.id) AS visits
+      FROM
+      visits AS v
+      JOIN
+      users AS u
+      ON
+      u.id = v.user
+      WHERE to_char(visit_date, 'YYYY') BETWEEN $1 AND $2 AND u.station = $3
+      GROUP BY
+      to_char(visit_date, 'YYYY'),
+      u.station
+      `, [start, end, station]);
+      
     } catch (error) {
       return error;
     }

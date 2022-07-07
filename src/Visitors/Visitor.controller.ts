@@ -28,15 +28,15 @@ export class VisitorController {
         dataKid.guardain_id = resultGuardian.id as any;
 
         let resultKid: any = await KidService.add(dataKid);
-        if (resultKid.message !== 'success') {
+        if (resultKid.message !== "success") {
           if (!(resultKid instanceof Kid)) {
             return res.status(400).json({ status: 400, error: resultKid });
-          } 
+          }
         }
-      
+
         const dataVisit = {
           user: user,
-          kid_id: resultKid.kid_id as any || resultKid.id as any,
+          kid_id: (resultKid.kid_id as any) || (resultKid.id as any),
           guardain_id: resultGuardian.id as any,
         } as CreateVisitDto;
 
@@ -57,7 +57,6 @@ export class VisitorController {
       let user = req.user;
 
       for (let i = 0; i < req.body.kids.length; i++) {
-
         let dataGuardian: CreateGuardianDto = req.body.kids[i];
         dataGuardian.user = user;
         let resultGuardian = await GuardianService.add(dataGuardian);
@@ -70,15 +69,15 @@ export class VisitorController {
         dataKid.guardain_id = resultGuardian.id as any;
 
         let resultKid: any = await KidService.add(dataKid);
-        if (resultKid.message !== 'success') {
+        if (resultKid.message !== "success") {
           if (!(resultKid instanceof Kid)) {
             return res.status(400).json({ status: 400, error: resultKid });
-          } 
+          }
         }
-      
+
         const dataVisit = {
           user: user,
-          kid_id: resultKid.kid_id as any || resultKid.id as any,
+          kid_id: (resultKid.kid_id as any) || (resultKid.id as any),
           guardain_id: resultGuardian.id as any,
           visit_date: req.body.kids[i].visit_date,
           visit_time: req.body.kids[i].visit_time,
@@ -90,7 +89,7 @@ export class VisitorController {
         }
       }
       // const result = await VisitorUtils.getVisitor(resultGuardian.phone_number);
-      return res.status(201).json({ status: 201, data: 'result' });
+      return res.status(201).json({ status: 201, data: "result" });
     } catch (error) {
       return res.status(500).json({ error });
     }
@@ -100,9 +99,11 @@ export class VisitorController {
     try {
       const result = await VisitorUtils.getVisitor(req.params.phone);
       if (!result) {
-        return res.status(204).json({ status: 204, message: 'no record found' });
+        return res
+          .status(204)
+          .json({ status: 204, message: "no record found" });
       }
-      
+
       return res.status(200).json({ status: 200, data: result });
     } catch (error) {
       return res.status(500).json({ error });
@@ -111,12 +112,13 @@ export class VisitorController {
 
   static getAll = async (req: Request, res: Response) => {
     try {
-      
       const result = await VisitorUtils.getAllVisitor();
       if (!result) {
-        return res.status(204).json({ status: 204, message: 'no record found' });
+        return res
+          .status(204)
+          .json({ status: 204, message: "no record found" });
       }
-      
+
       return res.status(200).json({ status: 200, data: result });
     } catch (error) {
       return res.status(500).json({ error });
@@ -127,9 +129,11 @@ export class VisitorController {
     try {
       const result = await VisitorUtils.getDetail(req.params.phone);
       if (!result) {
-        return res.status(204).json({ status: 204, message: 'no record found' });
+        return res
+          .status(204)
+          .json({ status: 204, message: "no record found" });
       }
-      
+
       return res.status(200).json({ status: 200, data: result });
     } catch (error) {
       return res.status(500).json({ error });
@@ -142,9 +146,65 @@ export class VisitorController {
       let end = req.body.end;
       const result = await VisitorUtils.stationStatus(start, end);
       if (!result) {
-        return res.status(204).json({ status: 204, message: 'no record found' });
+        return res
+          .status(204)
+          .json({ status: 204, message: "no record found" });
       }
-      
+
+      return res.status(200).json({ status: 200, data: result });
+    } catch (error) {
+      return res.status(500).json({ error });
+    }
+  };
+
+  static dateWiseVisits = async (req: Request, res: Response) => {
+    try {
+      let start = req.body.start;
+      let end = req.body.end;
+      let station = req.body.station;
+      const result = await VisitorUtils.dateWiseVisits(start, end, station);
+      if (!result) {
+        return res
+          .status(204)
+          .json({ status: 204, message: "no record found" });
+      }
+
+      return res.status(200).json({ status: 200, data: result });
+    } catch (error) {
+      return res.status(500).json({ error });
+    }
+  };
+
+  static monthWiseVisits = async (req: Request, res: Response) => {
+    try {
+      let start = req.body.start;
+      let end = req.body.end;
+      let station = req.body.station;
+      const result = await VisitorUtils.monthWiseVisits(start, end, station);
+      if (!result) {
+        return res
+          .status(204)
+          .json({ status: 204, message: "no record found" });
+      }
+
+      return res.status(200).json({ status: 200, data: result });
+    } catch (error) {
+      return res.status(500).json({ error });
+    }
+  };
+
+  static yearWiseVisits = async (req: Request, res: Response) => {
+    try {
+      let start = req.body.start;
+      let end = req.body.end;
+      let station = req.body.station;
+      const result = await VisitorUtils.yearWiseVisits(start, end, station);
+      if (!result) {
+        return res
+          .status(204)
+          .json({ status: 204, message: "no record found" });
+      }
+
       return res.status(200).json({ status: 200, data: result });
     } catch (error) {
       return res.status(500).json({ error });
